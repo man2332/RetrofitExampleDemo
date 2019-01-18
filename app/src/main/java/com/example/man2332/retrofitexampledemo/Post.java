@@ -4,10 +4,18 @@ import com.google.gson.annotations.SerializedName;
 
 public class Post {
     private int userId;
-    private int id;
+    private Integer id;
     private String title;
     @SerializedName("body")
     private String text;
+
+    //constructor uses to POST to web server - no need for id - because API will ignore it anways
+    //  -since API needs to autogenerate their own id
+    public Post(int userId, String title, String text) {
+        this.userId = userId;
+        this.title = title;
+        this.text = text;
+    }
 
     public int getUserId() {
         return userId;
@@ -27,6 +35,7 @@ public class Post {
 }
 //serializedname
 //-json convert later converts POST to java objects
+//-this Post class MAPS the API requests objects that are returned
 
 //-SAMPLE OF JSON - https://jsonplaceholder.typicode.com/posts
 //{
