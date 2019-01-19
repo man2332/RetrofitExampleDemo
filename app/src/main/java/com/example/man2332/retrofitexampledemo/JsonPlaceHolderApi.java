@@ -1,15 +1,17 @@
 package com.example.man2332.retrofitexampledemo;
-
 import java.util.List;
 import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
 import retrofit2.http.Field;
 import retrofit2.http.FieldMap;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
+import retrofit2.http.PATCH;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 import retrofit2.http.QueryMap;
@@ -50,6 +52,7 @@ public interface JsonPlaceHolderApi {
     //-pass our fields using a Post object
     @POST("posts")
     Call<Post> createPost(@Body Post post);
+    //-@Body the post object we wish to POST to the API- JSON will serialize this into JSON format for us
 
     //-pass our fields directly using args
     @FormUrlEncoded
@@ -64,6 +67,22 @@ public interface JsonPlaceHolderApi {
     @FormUrlEncoded
     @POST("posts")
     Call<Post> createPost(@FieldMap Map<String, String> fields);
+
+    @PUT("posts/{id}")
+    Call<Post> putPost(@Path("id") int id, @Body Post post);
+    //-@PUT() - update/replace the object with the given id. If the object doesn't provide values
+    //      all the fiels, it will be put as null. If an id isn't found it might make a
+    //      POST request(create the obj) instead depending on the API or get a 404 error response.
+
+    @PATCH("posts/{id}")
+    Call<Post> patchPost(@Path("id") int id, @Body Post post);
+    //@PATCH() - find the object with the given id, and update/replace only the fields that are given in
+    //      the object
+
+    @DELETE("posts/{id}")
+    Call<Void> deletePost(@Path("id") int id);
+    //@DELETE - returns an empty respone
+
 }
 //-we need a interface to represent the API of the web service -JsonPlaceHolder is name of the api we using
 //-Call retrofit2 - list of post - list of json objs from the api
@@ -73,6 +92,9 @@ public interface JsonPlaceHolderApi {
 //-BASE URL and RELATIVE URL
 //-you can also use the entire url instead of just the relative path
 //  -@GET("https://jsonplaceholder.typicode.com/posts") will replace the base url with whats given
+
+//-CALL<List<>> - is a interface that helps a retrofit method with it's calls(hhtp requests/response)
+//  -retrofit returns CALL objects to these HTTP methods that it defines for you
 
 //-SAMPLE OF JSON - https://jsonplaceholder.typicode.com/posts
 //  -the base url here is https://jsonplaceholder.typicode.com/

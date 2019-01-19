@@ -4,10 +4,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -15,6 +20,8 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 //@PATH @QUERY @QUERYMAP @URL
 //@GET @POST
+//@PUT @PATCH @DELETE
+//OkHttpClient Logging
 public class MainActivity extends AppCompatActivity {
     private TextView textViewResult;
     private JsonPlaceHolderApi jsonPlaceHolderApi;
@@ -26,16 +33,27 @@ public class MainActivity extends AppCompatActivity {
 
         textViewResult = findViewById(R.id.text_view_result);
 
+        Gson gson = new GsonBuilder().serializeNulls().create();//used to allow null values in gson
+        //-then pass in the gson obj into .create() to tell retrofit to use it instead of default gson
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+
+        OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                .addInterceptor(loggingInterceptor)
+                .build();
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("https://jsonplaceholder.typicode.com/")
-                .addConverterFactory(GsonConverterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .client(okHttpClient)//tell retrofit to use our custom client instead of a default 1
                 .build();
         jsonPlaceHolderApi = retrofit.create(JsonPlaceHolderApi.class);
 
         //getPosts();
         //getComments();
-        createPost();
+        //createPost();
+        updatePost();
+        //deletePost();
     }
 
     private void getComments() {
@@ -161,6 +179,61 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+    private void updatePost() {
+        Post post = new Post(12, null, "New Text");
+
+        //Call<Post> call = jsonPlaceHolderApi.putPost(5, post);//replace entire object
+        Call<Post> call = jsonPlaceHolderApi.patchPost(5, post);
+        //-by default gson will not accept null values, if a null value is passed, gson will just
+        //  remove the whole field when it sends it as a POST request,
+        //  so when it gets posted, the orginal value of the object on the API
+        //  stays the same. But u can make it so gson does accept null values by configuring
+        //  the gson obj and placing it in the Retrofit builder.(line 32)
+
+        call.enqueue(new Callback<Post>() {
+            @Override
+            public void onResponse(Call<Post> call, Response<Post> response) {
+
+                if (!response.isSuccessful()) {
+                    textViewResult.setText("Code: " + response.code());
+                    return;
+                }
+
+                Post postResponse = response.body();
+
+                String content = "";
+                content += "Code: " + response.code() + "\n";
+                content += "ID: " + postResponse.getId() + "\n";
+                content += "User ID: " + postResponse.getUserId() + "\n";
+                content += "Title: " + postResponse.getTitle() + "\n";
+                content += "Text: " + postResponse.getText() + "\n\n";
+
+                textViewResult.setText(content);
+            }
+
+            @Override
+            public void onFailure(Call<Post> call, Throwable t) {
+                textViewResult.setText(t.getMessage());
+            }
+        });
+    }
+
+    private void deletePost() {
+        Call<Void> call = jsonPlaceHolderApi.deletePost(5);
+
+        call.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                textViewResult.setText("Code: " + response.code());//shows 200 if delete was successful
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                textViewResult.setText(t.getMessage());
+            }
+        });
+    }
+
 }
 //<uses-permission android:name="android.permission.INTERNET"/>
 
@@ -186,12 +259,15 @@ public class MainActivity extends AppCompatActivity {
 //      and get from baseURL/posts -where baseURL should have been provided when building the retrofit obj
 //      basically GET from https://jsonplaceholder.typicode.com/posts
 
-//-CALL<List<>> - is a interface that helps a retrofit method with it's calls(hhtp requests/response)
+
 
 //-build.gradle -
 //    implementation 'com.squareup.retrofit2:retrofit:2.4.0'
 //    implementation 'com.squareup.retrofit2:converter-gson:2.4.0'.
+//    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.1'
 
 //-retrofit.create(JsonPlaceHolderApi.class);   - retrofit will define the methods for us with .create()
 //- cannot call network requests on mainthread Ex. call.execute()
+
+//https://codinginflow.com/tutorials/android/retrofit/part-5-httplogginginterceptor
 
